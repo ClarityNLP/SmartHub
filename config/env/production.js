@@ -48,7 +48,7 @@ module.exports = {
 
   sockets: {
     onlyAllowOrigins: [
-      `${PROTOCOL}://${SMARTHUB_UI_ORIGIN}`
+      "http://localhost:1337"
     ],
     adapter: '@sailshq/socket.io-redis',
     url: `redis://${REDIS_HOSTNAME}:${REDIS_CONTAINER_PORT}/0`,

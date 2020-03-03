@@ -15,7 +15,7 @@ module.exports = Joi.object({
             Joi.object({
               number: Joi.number().required(),
               name: Joi.string().required(),
-              type: Joi.string().required(),
+              type: Joi.string(), //spreadsheet not providing this.
               autofill: autofillSchema,
               options: Joi.array().items(Joi.object({
                 label: Joi.string().required(),
@@ -42,5 +42,28 @@ module.exports = Joi.object({
       })
     ),
     allIds: Joi.array().items(Joi.string()).required()
-  })
+  }).required(),
+  evidences: Joi.object().pattern(
+    /^/,
+    Joi.object({
+      allIds: Joi.array().items(Joi.string()).required(),
+      byId: Joi.object().pattern(
+        /^/,
+        Joi.object({
+          displayType: Joi.string().valid('table','cards').required(),
+          items: Joi.string().allow(null).valid(null).required(),
+        })
+        .when(Joi.object({ displayType: Joi.string().valid('table') }), {
+          then: Joi.object({
+            title: Joi.string().required(),
+            subtitle: Joi.string(),
+            cols: Joi.array().items(Joi.object({
+              label: Joi.string().required(),
+              value: Joi.string().required()
+            }))
+          })
+        })
+      )
+    })
+  ).required()
 });

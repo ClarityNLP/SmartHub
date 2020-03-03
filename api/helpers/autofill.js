@@ -1,8 +1,9 @@
 const Joi = require('joi');
 const ObjectID = require('mongodb').ObjectID;
 const map = require("async/map");
-
-/* TODO - NOT DONE. */
+const get = require('lodash/get');
+const AutofillError = require('../../errors/autofill-error');
+const autofillSchema = require('../../schemas/autofill');
 
 module.exports = {
 
@@ -42,136 +43,226 @@ module.exports = {
     try {
       const db = sails.getDatastore("default").manager;
 
-      const schema = Joi.object().keys({
+      const schema = Joi.object({
         activityId: Joi.string().required(),
-        questionSlug: Joi.string(), //NOTE: not used, nice to see in outgoing request from Chrome dev tools however.
-        autofill: Joi.object().keys({
-          type: Joi.string(),
-          default: Joi.string(),
-          cases: Joi.array().items(
-            Joi.object().keys({
-              queries: Joi.array(),
-              value: Joi.alternatives().try(Joi.array().items(Joi.string()), Joi.string())
-            })
-          )
-          // cases: Joi.array().items(
-          //   Joi.object().keys({
-          //     queries: Joi.array().items(
-          //       Joi.object().keys({
-          //         field: Joi.string(),
-          //         criteria: Joi.alternatives().try(Joi.object(), Joi.string())
-          //       })
-          //     ),
-          //     value: Joi.alternatives().try(Joi.array().items(Joi.string()), Joi.string())
-          //   })
-          // )
-        })
+        questionSlug: Joi.string().required(),
+        autofill: autofillSchema
       });
-
+      
       const validatedBody = await Joi.validate(inputs.body, schema, {
         stripUnknown: true
       });
 
       const {
         activityId,
+        questionSlug,
         autofill
       } = validatedBody;
 
-      // pseudo code
-      // - parse sessionId
-      // - parse subjectId from body
-      // - parse formSlug from url param
-      // - Form.findOne(sessionId, subjectId, formSlug)
-      // - doing autofill...
+  /***************************************************************************
+  *                                                                          *
+  * Find or create autofill record. Good idea to instantiate the record      *
+  * early in the autofill service so we can pin a thrown exception to        *
+  * something tangible.                                                      *
+  *                                                                          *
+  ***************************************************************************/
 
-      map(autofill.cases, async (c) => {
-        const query = c.queries.reduce((acc, q) => {
-          const [ bundle, feature, ...rest ] = q.field.split('.');
-          return q.clauses ? (//TODO w/ new style...
-            {
-              ...acc,
-              [q.operator]: q.clauses.map(c => {
-                return {
-                  [c.field]: { [c.operator]: c.criteria }
-                }
-              })
+      const { value: autofillRecord } = await db.collection('autofill').findAndModify(
+        {
+          activityId: new ObjectID(activityId),
+          questionSlug: questionSlug
+        },
+        {},
+        {
+          $setOnInsert: {
+            activityId: new ObjectID(activityId),
+            questionSlug: questionSlug
+          },
+          $unset: {
+            error: null,
+            trace: null,
+            value: null
+          }
+        },
+        {
+          new: true,
+          upsert: true,
+        }
+      )
+
+      const { _id: autofillId } = autofillRecord;
+
+  /***************************************************************************
+  *                                                                          *
+  * What the autofill service is doing:                                      *
+  *                                                                          *
+  * (1) Iterate over cases                                                   *
+  *  --> (1a) Construct query (data + activityId)                            *
+  *  --> (1b) Determine if there is a value reference ($$)                   *
+  *  --> (1c) Finding matching document (.findOne for now)                   *
+  * (2) Massage values based on question type                                *
+  * (3) Update autofill record to contain trace/value information            *                                                   *
+  *                                                                          *
+  ***************************************************************************/
+
+      try {
+        let matchQuery, match;
+        const rawValues = await map(autofill.cases, async (c) => {
+          const query = c.queries.reduce((acc, q) => {
+            if (q.clauses) {
+              return {
+                ...acc,
+                [q.operator]: q.clauses.map(c => {
+                  const [ bundle, feature, ...rest ] = c.field.split('.');
+                  return {
+                    field: `${bundle}.${feature}`,
+                    [`data.${rest}`]: { [c.operator]: c.criteria }
+                  }
+                })
+              };
+            } else {
+              const [ bundle, feature, ...rest ] = q.field.split('.');
+              return {
+                ...acc,
+                field: `${bundle}.${feature}`,
+                [`data.${rest}`]: { [q.operator]: q.criteria }
+              };
             }
-          ) : (
-            {
-              ...acc,
-              // [q.field]: { [q.operator]: q.criteria }
-              field: `${bundle}.${feature}`,
-              [`data.${rest}`]: { [q.operator]: q.criteria }
-            }
-          )
-        }, { activityId: new ObjectID(activityId) } );
+          }, { activityId: new ObjectID(activityId) } );
 
-        // const match = await db.collection('evidence').find( //do we need more than one match? TODO
-        //   query,
-        //   {
-        //     value: "$$" ?
-        //   }
-        // )
+          const getValRef = (value) => {
+            const [ bundle, feature, ...rest ] = value.split('.');
+            return `data.${rest}`;
+          }
 
-        // return
+          const valRef = c.value.substring(0,2) === "$$" ? getValRef(c.value) : null
 
-        // const isMatch = await db.collection('activity').findOne(
-        //   query,
-        //   {
-        //     _id: 1,
-        //
-        //   }
-        // );
-        // const isMatch = await db.collection('activity').aggregate([
-        //   { $match: query },
-        //   { $project: {
-        //       matches: { $filter: {
-        //           // input: '$$CURRENT',
-        //         // as: 'evidences',
-        //         // cond: { $eq: ['$$cars.colour', 'blue']}
-        //         cond: {
-        //           // $eq: ['this.evidences.cellular_therapy_infusion.byId.Kymriah.items[0].value_name', 'Kymriah' ]
-        //           $eq: ["test", "test"]
-        //         }
-        //       }},
-        //       _id: 0
-        //   }}
-        // ]).toArray();
+          match = await db.collection('evidence').findOne(
+            query,
+            valRef ? { [valRef]: 1 } : { _id: 1 }
+          );
 
+          return !!!match ? null               :
+                   valRef ? get(match, valRef) :
+                            c.value            ;
+        });
 
-        //   query,
-        //   {
-        //     _id: 1,
-        //
-        //   }
-        // );
-        // console.log('isMatch: ',isMatch);
-        return !!isMatch ? c.value : null;
-      }, (err, values) => {
-        if (err) {
-          return exits.error(err);
+        const initMap = {
+          radio: null,
+          text: null,
+          checkbox: [],
+          select: []
         }
 
-        const init = null; //{} //[]
+        const init = initMap[autofill.type] || null;
 
-        //log(values)
-        // [
-        //  'yes'
-        //  'maybe'
-        //  null
-        // ]
+        /*
+          log(values)
+          [
+           'yes'
+           'maybe'
+           null
+          ]
+        */
 
-        const value = values.reduce((acc, value) => {
-          return acc = value || acc;
+        const truthy = (type, values) => {
+          switch (type) {
+            case 'radio': // Fallthrough
+            case 'text': {
+              return values ? true : false;
+            }
+            case 'checkbox': // Fallthrough
+            case 'select': {
+              return values.length > 0 ? true : false;
+            }
+          }
+        };
+
+        const values = rawValues.reduce((acc, value) => {
+          switch(autofill.type) {
+            case 'radio': // Fallthrough
+            case 'text':
+              return value || acc;
+            case 'checkbox': // Fallthrough
+            case 'select': {
+              return value ? [...acc, value] : acc;
+            }
+          }
         }, init);
 
         // log(value)
         // 'maybe'
 
-        return exits.success(value || autofill.default);
-      });
+        const truthyValue = truthy(autofill.type, values) ? values : autofill.default;
+
+  /***************************************************************************
+  *                                                                          *
+  * Update autofill record to trace what happened.                           *
+  *                                                                          *
+  ***************************************************************************/
+
+        await db.collection('autofill').updateOne(
+          { _id: new ObjectID(autofillId) },
+          {
+            $set: {
+              trace: {
+                command: autofill,
+                evidence: match
+              },
+              value: truthyValue
+            }
+          }
+        );
+
+        return exits.success(truthyValue);
+      } catch(e) {
+        throw new AutofillError(
+          autofillId,
+          e.message
+        );
+      }
     } catch(e) {
-      return exits.error(e);
+      if (e instanceof AutofillError) {
+        try {
+          const db = sails.getDatastore("default").manager;
+
+  /***************************************************************************
+  *                                                                          *
+  * Insert one error record.                                                 *
+  *                                                                          *
+  ***************************************************************************/
+
+          const { insertedId: newErrorId } = await db.collection('error').insertOne({
+            ...e,
+            stack: e.stack,
+            message: e.message
+          });
+
+  /***************************************************************************
+  *                                                                          *
+  * Update autofill record to include the error.                             *
+  *                                                                          *
+  ***************************************************************************/
+
+          await db.collection('autofill').updateOne(
+            { _id: new ObjectID(e.autofillId) },
+            {
+              $set: {
+                error: {
+                  date: e.date,
+                  stack: e.stack,
+                  message: e.message,
+                  _id: newErrorId
+                }
+              }
+            }
+          );
+          return exits.error(e.message || e);
+        } catch (e) {
+          return exits.error(e.message || e);
+        }
+      }
+      return exits.error(e.message || e);
     }
   }
 };

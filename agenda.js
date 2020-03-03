@@ -1,16 +1,9 @@
 const Agenda = require('agenda');
-const {
-  MONGO_USERNAME,
-  MONGO_PASSWORD,
-  MONGO_HOSTNAME,
-  MONGO_CONTAINER_PORT,
-  MONGO_DATABASE
-} = process.env;
 
 var agenda = new Agenda(
   {
     db: {
-      address: `${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_HOSTNAME}:${MONGO_CONTAINER_PORT}/${MONGO_DATABASE}`,
+      address: sails.config.datastores.default.url,
       collection: 'job'
     }
   }

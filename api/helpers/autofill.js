@@ -46,9 +46,9 @@ module.exports = {
       const schema = Joi.object({
         activityId: Joi.string().required(),
         questionSlug: Joi.string().required(),
-        autofill: autofillSchema
+        autofill: autofillSchema({ strict: true })
       });
-      
+
       const validatedBody = await Joi.validate(inputs.body, schema, {
         stripUnknown: true
       });

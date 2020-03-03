@@ -16,7 +16,7 @@ module.exports = Joi.object({
               number: Joi.number().required(),
               name: Joi.string().required(),
               type: Joi.string().required(),
-              autofill: autofillSchema,
+              autofill: autofillSchema({ strict: false }),
               options: Joi.array().items(Joi.object({
                 label: Joi.string().required(),
                 value: Joi.string().required()
@@ -51,7 +51,7 @@ module.exports = Joi.object({
         /^/,
         Joi.object({
           displayType: Joi.string().valid('table','cards').required(),
-          items: Joi.string().allow(null).valid(null).required(),
+          items: Joi.string().allow(null).valid(null), //not required.
         })
         .when(Joi.object({ displayType: Joi.string().valid('table') }), {
           then: Joi.object({

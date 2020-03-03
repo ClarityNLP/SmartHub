@@ -1,7 +1,7 @@
 var Joi = require('joi');
 
 module.exports = Joi.object({
-  type: Joi.string().required(),
+  type: Joi.string(), //spreadsheet not providing this.
   default: Joi.alternatives().try(
     Joi.array().items(Joi.string()),
     Joi.string().allow('', null)

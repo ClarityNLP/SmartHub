@@ -15,7 +15,7 @@ module.exports = Joi.object({
             Joi.object({
               number: Joi.number().required(),
               name: Joi.string().required(),
-              type: Joi.string(), //spreadsheet not providing this.
+              type: Joi.string().required(),
               autofill: autofillSchema,
               options: Joi.array().items(Joi.object({
                 label: Joi.string().required(),

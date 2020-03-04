@@ -1,7 +1,19 @@
 module.exports = {
   all: async function(req,res) {
-    const forms = await Form.find();
-    return res.send(forms);
+    try {
+      const db = sails.getDatastore("default").manager;
+      const forms = await db.collection('form').find(
+        {},
+        {
+          _id: 1,
+          name: 1,
+          slug: 1
+        }
+      ).toArray();
+      return res.send(forms);
+    } catch (e) {
+      return res.badRequest(e);
+    }
   },
 
   validate: async function(req,res) {

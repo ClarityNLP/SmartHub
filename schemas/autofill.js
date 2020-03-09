@@ -45,6 +45,6 @@ module.exports = function(opt) {
         ),
         value: Joi.string().required()
       })
-    ).required()
-  }).allow('', null)
+    )
+  }).allow('', null).or('default', 'cases');
 }

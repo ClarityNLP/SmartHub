@@ -1,11 +1,13 @@
 module.exports.routes = {
   /* Autofill */
   'get /autofill/:autofillId': 'AutofillController.getAutofill',
+  'get /autofills/:autofillId/evidence': 'AutofillController.getAutofillDocument',
   'post /activities/:activityId/questions/:questionSlug/autofill': 'AutofillController.doAutofill',
 
   /* Form */
   'post /forms': 'FormController.create',
   'get /forms': 'FormController.all',
+  'put /forms/:formId': 'FormController.update',
   'post /schemas/v2/validate': 'FormController.validate',
 
   /* Evidence */

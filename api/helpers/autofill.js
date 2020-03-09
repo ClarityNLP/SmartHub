@@ -107,6 +107,14 @@ module.exports = {
 
       try {
         let matchQuery, match;
+
+        if (!autofill.cases) {
+          return exits.success({
+            value: autofill.default,
+            id: autofillId
+          });
+        }
+
         const rawValues = await map(autofill.cases, async (c) => {
           const query = c.queries.reduce((acc, q) => {
             if (q.clauses) {
@@ -175,6 +183,9 @@ module.exports = {
             case 'select': {
               return values.length > 0 ? true : false;
             }
+            default: {
+              return false
+            }
           }
         };
 
@@ -193,7 +204,7 @@ module.exports = {
         // log(value)
         // 'maybe'
 
-        const truthyValue = truthy(autofill.type, values) ? values : autofill.default;
+        const truthyValue = truthy(autofill.type, values) ? values : autofill.default || null;
 
   /***************************************************************************
   *                                                                          *
@@ -214,11 +225,14 @@ module.exports = {
           }
         );
 
-        return exits.success(truthyValue);
+        return exits.success({
+          value: truthyValue,
+          id: autofillId
+        });
       } catch(e) {
         throw new AutofillError(
           autofillId,
-          e.message
+          e.message || e
         );
       }
     } catch(e) {
@@ -257,9 +271,9 @@ module.exports = {
               }
             }
           );
-          return exits.error(e.message || e);
+          return exits.error({ message: e.message, id: e.autofillId });
         } catch (e) {
-          return exits.error(e.message || e);
+          return exits.error({ message: e.message, id: e.autofillId });
         }
       }
       return exits.error(e.message || e);

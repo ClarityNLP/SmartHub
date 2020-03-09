@@ -33,7 +33,8 @@ module.exports = Joi.object({
                 Joi.array().items(Joi.string()),
                 Joi.string().allow('', null)
               ),
-              evidence: Joi.string().allow(null)
+              evidence: Joi.string().allow(null) //TODO - make required? Lack of
+              // causing errors.
             }).and('validationType', 'validations')
           ),
           allIds: Joi.array().items(Joi.string()).required()

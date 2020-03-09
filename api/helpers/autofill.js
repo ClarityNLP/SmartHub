@@ -133,14 +133,14 @@ module.exports = {
               return {
                 ...acc,
                 field: `${bundle}.${feature}`,
-                [`data.${rest}`]: { [q.operator]: q.criteria }
+                [`data.${rest.join('.')}`]: { [q.operator]: q.criteria }
               };
             }
           }, { activityId: new ObjectID(activityId) } );
 
           const getValRef = (value) => {
             const [ bundle, feature, ...rest ] = value.split('.');
-            return `data.${rest}`;
+            return `data.${rest.join('.')}`;
           }
 
           const valRef = c.value.substring(0,2) === "$$" ? getValRef(c.value) : null

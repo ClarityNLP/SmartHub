@@ -124,7 +124,7 @@ module.exports = {
                   const [ bundle, feature, ...rest ] = c.field.split('.');
                   return {
                     field: `${bundle}.${feature}`,
-                    [`data.${rest}`]: { [c.operator]: c.criteria }
+                    [`data.${rest.join('.')}`]: { [c.operator]: c.criteria }
                   }
                 })
               };
@@ -150,6 +150,8 @@ module.exports = {
             valRef ? { [valRef]: 1 } : { _id: 1 }
           );
 
+          console.log('match: ',match);
+
           return !!!match ? null               :
                    valRef ? get(match, valRef) :
                             c.value            ;
@@ -157,6 +159,7 @@ module.exports = {
 
         const initMap = {
           radio: null,
+          date: null,
           text: null,
           checkbox: [],
           select: []
@@ -176,6 +179,7 @@ module.exports = {
         const truthy = (type, values) => {
           switch (type) {
             case 'radio': // Fallthrough
+            case 'date': // Fallthrough
             case 'text': {
               return values ? true : false;
             }
@@ -192,6 +196,7 @@ module.exports = {
         const values = rawValues.reduce((acc, value) => {
           switch(autofill.type) {
             case 'radio': // Fallthrough
+            case 'date': //Fallthrough
             case 'text':
               return value || acc;
             case 'checkbox': // Fallthrough

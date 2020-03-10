@@ -150,8 +150,6 @@ module.exports = {
             valRef ? { [valRef]: 1 } : { _id: 1 }
           );
 
-          console.log('match: ',match);
-
           return !!!match ? null               :
                    valRef ? get(match, valRef) :
                             c.value            ;

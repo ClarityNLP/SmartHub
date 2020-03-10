@@ -52,6 +52,7 @@ module.exports = Joi.object({
         /^/,
         Joi.object({
           displayType: Joi.string().valid('table','cards').required(),
+          title: Joi.string(),
           items: Joi.string().allow(null).valid(null), //not required.
         })
         .when(Joi.object({ displayType: Joi.string().valid('table') }), {

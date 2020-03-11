@@ -18,10 +18,17 @@ module.exports = {
   findById: async function(req,res) {
     try {
       const activityId = req.param('activityId');
-      const activity = await Activity.findOne(activityId);
-      if (!activity) {
-        throw new Error(`No activity found with id ${activityId}`);
-      }
+      const activity = await db.collection('activity').findOne(
+        { _id: new ObjectID(activityId)},
+        {
+          _id: 0,
+          patientId: 1,
+          name: 1,
+          slug: 1,
+          groups: 1,
+          evidences: 1
+        }
+      );
       return res.send(activity);
     } catch(err) {
       return res.badRequest(err);

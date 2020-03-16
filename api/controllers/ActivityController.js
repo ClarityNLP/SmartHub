@@ -21,7 +21,7 @@ module.exports = {
       const activity = await db.collection('activity').findOne(
         { _id: new ObjectID(activityId)},
         {
-          _id: 0,
+          _id: 1,
           patientId: 1,
           name: 1,
           slug: 1,

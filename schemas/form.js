@@ -13,7 +13,10 @@ module.exports = Joi.object({
           byId: Joi.object().pattern(
             /^/,
             Joi.object({
-              number: Joi.number().required(),
+              number: Joi.alternatives().try(
+                Joi.number(),
+                Joi.string()
+              ).required(),
               name: Joi.string().required(),
               type: Joi.string().required(),
               autofill: autofillSchema({ strict: false }),

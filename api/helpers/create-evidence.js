@@ -71,11 +71,11 @@ module.exports = {
 
       const evidence = await rp(options);
 
-      console.log(JSON.stringify({
-        ...options,
-        evidence: evidence
-      }, null, 2))
-      
+      // console.log(JSON.stringify({
+      //   ...options,
+      //   evidence: evidence
+      // }, null, 2))
+
       const evidenceById = evidence.reduce((acc, item) => {
         return {
           ...acc,

@@ -9,6 +9,8 @@ module.exports.routes = {
   'get /forms': 'FormController.all',
   'put /forms/:formId': 'FormController.update',
   'post /schemas/v2/validate': 'FormController.validate',
+  'delete /forms/:formSlug/activities': 'FormController.deleteActivitiesByForm',
+  'put /forms/:formSlug/activities/reset': 'FormController.resetActivitiesByForm',
 
   /* Evidence */
   'post /activities/:activityId/evidences/:evidenceSlug': 'EvidenceController.create',
@@ -20,6 +22,7 @@ module.exports.routes = {
   'get /activities': 'ActivityController.all',
   'put /activities/reset': 'ActivityController.reset',
   'put /activities/:activityId/values': 'ActivityController.updateValues',
+  'put /activities/:activityId/autofillIds': 'ActivityController.updateAutofillIds',
   'put /activities/:activityId/groups': 'ActivityController.updateGroupLoadingStates',
 
   /* Job */

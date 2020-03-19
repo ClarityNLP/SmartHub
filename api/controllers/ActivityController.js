@@ -78,8 +78,53 @@ module.exports = {
       };
       await sails.helpers.updateValues(body);
       return res.ok();
-    } catch(err) {
-      return res.badRequest(err);
+    } catch(e) {
+      return res.badRequest(e);
+    }
+  },
+  updateAutofillIds: async function(req,res) {
+    try {
+      const schema = Joi.object().keys({
+        activityId: Joi.string().required(),
+        autofillIds: Joi.object()
+      });
+
+      const payload = {
+        ...req.params,
+        autofillIds: req.body
+      };
+
+      const {
+        activityId,
+        autofillIds
+      } = await Joi.validate(payload, schema);
+
+      const activity = await db.collection('activity').findOne(
+        { _id: new ObjectID(activityId) },
+        { groupLookup: 1 }
+      );
+
+      if (!activity) {
+        return res.badRequest(`Activity ${activityId} not found.`);
+      }
+
+      const sets = Object.keys(autofillIds).reduce((acc, q) => {
+        return {
+          ...acc,
+          [`groups.byId.${activity.groupLookup[q]}.questions.byId.${q}.autofillId`]: autofillIds[q],
+          [`groups.byId.${activity.groupLookup[q]}.questions.byId.${q}.isAutofillLoaded`]: true
+          //TODO -- if autofill error occurs in user-mode or headless-mode, the error will not be persisted.
+        }
+      }, {});
+
+      await db.collection('activity').update(
+        { _id: new ObjectID(activityId) },
+        { $set: sets }
+      );
+
+      return res.ok();
+    } catch(error) {
+      return res.badRequest(error);
     }
   },
   updateGroupLoadingStates: async function(req,res) {

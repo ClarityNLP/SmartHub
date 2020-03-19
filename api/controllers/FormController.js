@@ -1,3 +1,5 @@
+const ObjectID = require('mongodb').ObjectID;
+
 module.exports = {
   all: async function(req,res) {
     try {
@@ -91,6 +93,54 @@ module.exports = {
       );
       return res.ok();
     } catch (e) {
+      return res.badRequest(e);
+    }
+  },
+
+  deleteActivitiesByForm: async function(req,res) {
+    try {
+      const db = sails.getDatastore("default").manager;
+      const formSlug = req.param('formSlug');
+      const form = await db.collection('form').findOne(
+        { slug: formSlug }
+      );
+
+      if (!form) {
+        return res.badRequest(`Form ${formSlug} not found.`);
+      }
+
+      //TODO make this work when form versioning is implemented.
+      await db.collection('activity').deleteMany(
+        { slug: formSlug }
+      )
+      return res.ok();
+    } catch(e) {
+      return res.badRequest(e);
+    }
+  },
+
+  resetActivitiesByForm: async function(req,res) {
+    try {
+      const db = sails.getDatastore("default").manager;
+      const formSlug = req.param('formSlug');
+      const form = await db.collection('form').findOne(
+        { slug: formSlug }
+      );
+
+      if (!form) {
+        return res.badRequest(`Form ${formSlug} not found.`);
+      }
+
+      //TODO make this work when form versioning is implemented.
+      const activities = await db.collection('activity').find(
+        { slug: formSlug },
+        { _id: 1}
+      ).toArray();
+
+      const activityIds = activities.map(a => new ObjectID(a._id).toString());
+      await sails.helpers.resetActivities(activityIds);
+      return res.ok();
+    } catch(e) {
       return res.badRequest(e);
     }
   }

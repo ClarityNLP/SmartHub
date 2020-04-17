@@ -29,8 +29,18 @@ module.exports.routes = {
   'post /jobs': 'JobController.create',
   'get /jobs': 'JobController.all',
   'get /jobs/:jobId': 'JobController.findById', //top-level job metadata
+  'get /jobs/:jobId/export': 'JobController.export',
+  'get /jobs/:jobId/export/:type': 'JobController.export',
 
-  'get /web-socket': 'JobController.testWebSocket'
+  'get /web-socket': 'JobController.testWebSocket',
 
-  // 'get /jobs/:jobId/activities' //populate activites in the job (show statuses as well)
+  /* Patient */
+  'get /patients/:patientId/documents': 'PatientController.getDocuments',
+
+  /* Document Transfer */
+  'post /transfers': 'TransferController.new',
+
+  /* Token */
+  'get /tokens': 'TokenController.new',
+
 };

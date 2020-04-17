@@ -11,8 +11,12 @@
     "agenda": "^1.0.3",
     "async": "^3.1.0",
     "axios": "^0.19.2",
+    "base64-url": "^2.3.3",
+    "crypto": "^1.0.1",
     "grunt": "1.0.4",
+    "humanize-duration": "^3.22.0",
     "joi": "^14.3.1",
+    "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.15",
     "mongodb": "^3.4.1",
     "request": "^2.88.0",
@@ -21,7 +25,9 @@
     "sails-hook-grunt": "^4.0.0",
     "sails-hook-orm": "^2.1.1",
     "sails-hook-sockets": "^2.0.0",
-    "sails-mongo": "^1.0.1"
+    "sails-mongo": "^1.0.1",
+    "semver": "^7.3.2",
+    "zip": "^1.2.0"
   },
   "devDependencies": {
     "eslint": "5.16.0"

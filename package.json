@@ -2,6 +2,7 @@
   "name": "smarthub",
   "private": true,
   "version": "0.0.0",
+  "homepage": ".",
   "description": "a Sails application",
   "keywords": [],
   "dependencies": {

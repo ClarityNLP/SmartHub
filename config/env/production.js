@@ -48,7 +48,7 @@ module.exports = {
 
   sockets: {
     onlyAllowOrigins: [
-      '*'
+      "http://localhost:1337"
     ],
     adapter: '@sailshq/socket.io-redis',
     url: `redis://${REDIS_HOSTNAME}:${REDIS_CONTAINER_PORT}/0`,
